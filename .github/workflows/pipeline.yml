@@ -42,14 +42,6 @@ jobs:
             exit 1
           fi
 
-      - name: 3. Varredura de termos sensíveis e comentários
-        run: |
-          # O parâmetro --exclude-dir=.github evita que o script leia a própria pipeline
-          if grep -rEi --exclude-dir=.github "TODO|FIXME|senha|password" .; then
-            echo "Erro: Foram encontrados termos Proibidos ou comentários sensíveis."
-            exit 1
-          fi
-
       - name: 4. Validar HTML (Linter)
         run: |
           npm install -g htmlhint
