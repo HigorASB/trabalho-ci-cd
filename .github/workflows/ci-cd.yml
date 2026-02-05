@@ -1,0 +1,80 @@
+name: CI-CD-Portfolio
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+jobs:
+  lint-and-validate:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [18, 20] # Etapa 5: Matrix Strategy
+
+    steps:
+      - name: Checkout do código
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+
+      - name: 1. Verificar index.html na raiz
+        run: |
+          if [ ! -f index.html ]; then
+            echo "ERRO: Arquivo index.html não encontrado!"
+            exit 1
+          fi
+
+      - name: 2. Bloquear arquivos > 500KB
+        run: |
+          files=$(find . -type f -not -path '*/.*' -size +500k)
+          if [ -n "$files" ]; then
+            echo "Erro: Arquivos excedem 500KB: $files"
+            exit 1
+          fi
+
+      - name: 3. Varredura de termos sensíveis e comentários
+        run: |
+          if grep -rEi "TODO|FIXME|senha|password" .; then
+            echo "Erro: Foram encontrados termos Proibidos."
+            exit 1
+          fi
+
+      - name: 4. Validar HTML (Linter)
+        run: |
+          npm install -g htmlhint
+          htmlhint index.html
+
+      - name: 5. Validar Links e Imagens
+        uses: lycheeverse/lychee-action@v1.9.0
+        with:
+          args: --verbose --no-progress './**/*.html'
+
+  deploy:
+    needs: lint-and-validate
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Pages
+        uses: actions/configure-pages@v4
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: "."
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
