@@ -44,8 +44,9 @@ jobs:
 
       - name: 3. Varredura de termos sensíveis e comentários
         run: |
-          if grep -rEi "TODO|FIXME|senha|password" .; then
-            echo "Erro: Foram encontrados termos Proibidos."
+          # O parâmetro --exclude-dir=.github evita que o script leia a própria pipeline
+          if grep -rEi --exclude-dir=.github "TODO|FIXME|senha|password" .; then
+            echo "Erro: Foram encontrados termos Proibidos ou comentários sensíveis."
             exit 1
           fi
 
