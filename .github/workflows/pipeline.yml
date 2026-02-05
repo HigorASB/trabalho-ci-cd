@@ -1,0 +1,80 @@
+name: Pipeline de CI/CD Portfolio
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    [cite_start]branches: [ main ] # Dispara em PRs para a main [cite: 15, 16]
+
+[cite_start]permissions: # Necessário para a Etapa 2 (CD) [cite: 37]
+  contents: read
+  pages: write
+  id-token: write
+
+jobs:
+  # ETAPA 1 e 5: Validação (CI)
+  lint-and-validate:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        [cite_start]node-version: [18, 20] # Estratégia de Matrix [cite: 49]
+    
+    steps:
+      - name: Checkout do código
+        [cite_start]uses: actions/checkout@v4 [cite: 17]
+
+      - name: Setup Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          [cite_start]node-version: ${{ matrix.node-version }} [cite: 17, 49]
+
+      # Verificação do index.html [cite: 21, 22]
+      - name: Verificar existência do index.html
+        run: |
+          if [ ! -f index.html ]; then
+            echo "Erro: Arquivo index.html não encontrado na raiz!"
+            exit 1
+          fi
+
+      # Bloqueio de arquivos > 500KB 
+      - name: Verificar tamanho dos arquivos (Máx 500KB)
+        run: |
+          files=$(find . -type f -not -path '*/.*' -size +500k)
+          if [ -n "$files" ]; then
+            echo "Arquivos muito grandes encontrados: $files"
+            exit 1
+          fi
+
+      # Varredura de termos sensíveis e comentários 
+      - name: Varredura de termos proibidos (TODO, FIXME, senha)
+        run: |
+          if grep -rEi "TODO|FIXME|senha|password" .; then
+            echo "Erro: Foram encontrados termos proibidos ou comentários de pendência."
+            exit 1
+          fi
+
+      # Execução do Linter (HTML Hint) [cite: 28]
+      - name: Executar Linter HTML
+        run: |
+          npm install -g htmlhint
+          htmlhint index.html
+
+      # Verificação de links e imagens [cite: 31]
+      # Nota: Aqui você pode usar uma ferramenta como o 'lychee' ou comandos curl
+      - name: Validar Links e Imagens
+        run: |
+          echo "Iniciando validação de URLs e caminhos..."
+          # Comandos de teste de integridade aqui
+
+  # ETAPA 2: Deploy (CD) - Só ocorre se o CI passar e for na branch main
+  deploy:
+    needs: lint-and-validate
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy para GitHub Pages
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: '.'
+      - name: Publicar Site
+        [cite_start]uses: actions/deploy-pages@v4 [cite: 33, 36]
