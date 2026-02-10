@@ -34,7 +34,7 @@ jobs:
         run: test -f src/css/style.css || (echo "CSS não encontrado no caminho novo" && exit 1)
 
       - name: Linting Profissional
-        uses: htmlhint/htmlhint-action@v2
+        uses: htmlhint/action-htmlhint@v2.2.1
         with:
           target_pattern: "src/index.html"
 
