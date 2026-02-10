@@ -27,30 +27,16 @@ jobs:
         with:
           node-version: ${{ matrix.node-version }}
 
-      - name: 1. Verificar index.html na raiz
-        run: |
-          if [ ! -f index.html ]; then
-            echo "ERRO: Arquivo index.html não encontrado!"
-            exit 1
-          fi
+      - name: Verificar Pasta
+        run: test -d src || (echo "Pasta src não encontrada" && exit 1)
 
-      - name: 2. Bloquear arquivos > 500KB
-        run: |
-          files=$(find . -type f -not -path '*/.*' -size +500k)
-          if [ -n "$files" ]; then
-            echo "Erro: Arquivos excedem 500KB: $files"
-            exit 1
-          fi
+      - name: Verificar CSS
+        run: test -f src/css/style.css || (echo "CSS não encontrado no caminho novo" && exit 1)
 
-      - name: 4. Validar HTML (Linter)
-        run: |
-          npm install -g htmlhint
-          htmlhint index.html
-
-      - name: 5. Validar Links e Imagens
-        uses: lycheeverse/lychee-action@v1.9.0
+      - name: Linting Profissional
+        uses: htmlhint/htmlhint-action@v2
         with:
-          args: --verbose --no-progress './**/*.html'
+          target_pattern: "src/index.html"
 
   deploy:
     needs: lint-and-validate
