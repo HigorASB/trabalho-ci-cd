@@ -33,11 +33,11 @@ jobs:
       - name: Verificar CSS
         run: test -f src/css/style.css || (echo "CSS não encontrado no caminho novo" && exit 1)
 
-      - name: Linting Profissional
-        uses: htmlhint/action-htmlhint@v2.2.3
-        with:
-          base_dir: "src"
-          target_pattern: "index.html"
+      - name: Install HTMLHint
+        run: npm install htmlhint --save-dev
+
+      - name: Run HTMLHint
+        run: ./node_modules/.bin/htmlhint "**/*.html"
 
   deploy:
     needs: lint-and-validate
